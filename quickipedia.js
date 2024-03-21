@@ -1,65 +1,55 @@
-async function node_children(title) {
-    let node = await fetch("https://en.wikipedia.org/w/api.php?action=query&prop=links&pllimit=max&format=json&formatversion=2&titles=" + title)
-    let json = await node.json();
-    return json.query.pages[0].links;
-}
+class Shortest_Path {
 
-async function completes(node, maps, a) {
-    return maps[a.opposite].has(node);
-}
-
-async function traverse(node, maps, a) {
-    if (await completes(node, maps, a)) {
-        return maps[0].get(node) + maps[1].get(node);
+    async node_children(title) {
+        let node = await fetch("https://en.wikipedia.org/w/api.php?action=query&prop=links&pllimit=max&format=json&formatversion=2&titles=" + title)
+        let json = await node.json();
+        return json.query.pages[0].links;
     }
-    let children = await node_children(node);
-    for (const child of children) {
-        maps[a.current].set(child.title, a.descendent);
-        if (await completes(child.title, maps, a)) {
-            return maps[0].get(child.title) + maps[1].get(child.title);
+
+    async completes(node, maps, state) {
+        return maps[state.opposite_map].has(node);
+    }
+
+    async traverse(node, maps, state) {
+        if (await this.completes(node, maps, state)) {
+            return maps[0].get(node) + maps[1].get(node);
+        }
+        let children = await this.node_children(node);
+        for (const child of children) {
+            if (await this.completes(child.title, maps, state)) {
+                return state.depth + maps[1].get(child.title);
+            }
+            maps[state.current_map].set(child.title, state.depth);
         }
     }
-}
 
-function switch_side(a) {
-    a.switched++; // number of times sides have switched
-    a.current = a.switched%2; // current map
-    a.opposite = (a.switched-1)%2; // opposite map
-    a.descendent = Math.floor(a.switched/2); // descendent depth
-}
-
-async function path(first, last) {
-    let map1 = new Map(); let map2 = new Map();
-    let a = {
-        "switched": 0,
-        "current:": 0,
-        "descendent": 0,
-        "opposite": 1
+    switch_side(state) {
+        state.switched++; // number of times sides have switched
+        state.current_map = state.switched%2; // for current map
+        state.opposite_map = (state.switched-1)%2; // for opposite map
+        state.depth = Math.floor(state.switched/2); // descendant depth
     }
-    map1.set(first, a.descendent); switch_side(a);
-    map2.set(last, a.descendent); switch_side(a);
-    let maps = [map1, map2];
-    return await traverse(first, maps, a);
-}
 
+    async path(first, last) {
+        let map1 = new Map(); let map2 = new Map();
+        let state = {
+            "switched": 0,
+            "current_map:": 0,
+            "depth": 0,
+            "opposite_map": 1
+        }
+        map1.set(first, state.depth); this.switch_side(state);
+        map2.set(last, state.depth); this.switch_side(state);
+        let maps = [map1, map2];
+        return await this.traverse(first, maps, state);
+    }
+}
 
 
 async function run_tests() {
-console.log("Trump->Trump", await path("Donald Trump", "Donald Trump"));
-console.log("Trump->Obama", await path("Donald Trump", "Barack Obama"));
-console.log("Trump->Thunberg", await path("Donald Trump", "Greta Thunberg"));
+let shortest = new Shortest_Path();
+console.log("Trump->Trump", await shortest.path("Donald Trump", "Donald Trump"));
+console.log("Trump->Obama", await shortest.path("Donald Trump", "Barack Obama"));
+console.log("Trump->Thunberg", await shortest.path("Donald Trump", "Greta Thunberg"));
 }
 run_tests();
-// time node quickipedia.js > /dev/null 2>&1
-
-// current
-// 01234567
-// 01010101
-
-// opposite
-// 01234567
-// 10101010
-
-// descendent
-// 01234567
-// 00112233
