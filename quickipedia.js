@@ -33,7 +33,7 @@ class Shortest_Path {
     async node_children(title) {
         let node = await fetch("https://en.wikipedia.org/w/api.php?action=query&prop=links&pllimit=max&format=json&formatversion=2&titles=" + title)
         let json = await node.json();
-        return json.query.pages[0].links;
+        return json.query.pages[0].links.map(page => page.title);
     }
     
 
@@ -43,20 +43,25 @@ class Shortest_Path {
 
     async traverse(node) {
 
-        let leaves = this.leaves[this.state.current_tree];
-        this.leaves[this.state.current_tree] = [];
+        while (this.state.switched < 3) {
+            // console.log(this.leaves[this.state.current_tree])
+            let leaves = this.leaves[this.state.current_tree];
+            this.leaves[this.state.current_tree] = [];
 
-        // check if any current leaves connect to opposite tree
-        for (const leaf of leaves) {
-            if (this.maps[this.state.opposite_tree].has(leaf)) {
-                return this.state.depth + this.maps[this.state.opposite_tree].get(leaf).depth;
+            // check if any current leaves connect to opposite tree
+            for (const leaf of leaves) {
+                if (this.maps[this.state.opposite_tree].has(leaf)) {
+                    return this.state.depth + this.maps[this.state.opposite_tree].get(leaf).depth;
+                }
             }
+            // otherwise grow current tree and switch sides
+            for (const leaf of leaves) {
+                this.leaves[this.state.current_tree] = 
+                this.leaves[this.state.current_tree].concat(await this.node_children(leaf));
+            }
+            //console.log(this.leaves[this.state.current_tree])
+            this.switch_side();
         }
-        // otherwise grow current tree and switch sides
-        for (const leaf of leaves) {
-            this.leaves[this.state.current_tree].push(await this.node_children(leaf));
-        }
-        this.switch_side();
     }
 
     async path_len() {
@@ -66,12 +71,9 @@ class Shortest_Path {
 
 
 async function run_tests() {
-let shortest = new Shortest_Path("Donald Trump", "Donald Trump");
-let shortest2 = new Shortest_Path("Donald Trump", "Barack Obama");
-let shortest3 = new Shortest_Path("Donald Trump", "Greta Thunberg");
+let shortest = new Shortest_Path("Donald Trump", "Barack Obama");
 
-console.log("Trump->Trump", await shortest.path_len());
-console.log("Trump->Obama", await shortest2.path_len());
-console.log("Trump->Thunberg", await shortest3.path_len());
+console.log(await shortest.path_len());
+
 }
 run_tests();
