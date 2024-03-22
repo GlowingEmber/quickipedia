@@ -9,9 +9,10 @@ class Shortest_Path {
             "depth": 0,
             "opposite_map": 1
         }
-        this.map1.set(first, this.state.depth); this.switch_side(this.state);
-        this.map2.set(last, this.state.depth); this.switch_side(this.state);
+        this.map1.set(first, ({depth: 0, parents: []})); this.switch_side(this.state);
+        this.map2.set(last, ({depth: 0, parents: []})); this.switch_side(this.state);
         this.maps = [this.map1, this.map2];
+        this.to_check = [first];
     }
 
     async node_children(title) {
@@ -26,14 +27,21 @@ class Shortest_Path {
 
     async traverse(node) {
         if (await this.completes(node)) {
-            return this.maps[this.state.current_map].get(node) + this.maps[this.state.opposite_map].get(node);
+            return this.maps[this.state.current_map].get(node).depth + this.maps[this.state.opposite_map].get(node).depth;
         }
         let children = await this.node_children(node);
         for (const child of children) {
             if (await this.completes(child.title)) {
-                return this.state.depth + this.maps[1].get(child.title);
+                return this.state.depth + this.maps[this.state.opposite_map].get(child.title).depth;
             }
-            this.maps[this.state.current_map].set(child.title, this.state.depth);
+            this.set_map(child.title);
+            // this.maps[this.state.current_map].set(child.title, this.state.depth);
+        }
+    }
+
+    set_map(node) {
+        if (!this.maps[this.state.current_map].has(node)) {
+            this.maps[this.state.current_map].set(node, ({depth: this.state.depth}))
         }
     }
 
