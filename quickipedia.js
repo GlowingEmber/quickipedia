@@ -5,14 +5,29 @@ class Shortest_Path {
         this.map1 = new Map(); this.map2 = new Map();
         this.state = {
             "switched": 0,
-            "current_map": 0,
+            "current_tree": 0,
             "depth": 0,
-            "opposite_map": 1
+            "opposite_tree": 1
         }
-        this.map1.set(first, ({depth: 0, parents: []})); this.switch_side(this.state);
-        this.map2.set(last, ({depth: 0, parents: []})); this.switch_side(this.state);
+        this.map1.set(first, ({depth: 0, parents: []}));
+        this.map2.set(last, ({depth: 0, parents: []}));
         this.maps = [this.map1, this.map2];
-        this.to_check = [first];
+        this.map1_leaves = [first]; this.map2_leaves = [last];
+        this.leaves = [this.map1_leaves, this.map2_leaves];
+
+    }
+
+    set_map(node) {
+        if (!this.maps[this.state.current_tree].has(node)) {
+            this.maps[this.state.current_tree].set(node, ({depth: this.state.depth}))
+        }
+    }
+
+    switch_side() {
+        this.state.switched++; // number of times sides have switched
+        this.state.current_tree = this.state.switched%2; // for current map
+        this.state.opposite_tree = (this.state.switched-1)%2; // for opposite map
+        this.state.depth = Math.floor(this.state.switched/2); // descendant depth
     }
 
     async node_children(title) {
@@ -20,36 +35,28 @@ class Shortest_Path {
         let json = await node.json();
         return json.query.pages[0].links;
     }
+    
 
     async completes(node) {
-        return this.maps[this.state.opposite_map].has(node);
+        return this.maps[this.state.opposite_tree].has(node);
     }
 
     async traverse(node) {
-        if (await this.completes(node)) {
-            return this.maps[this.state.current_map].get(node).depth + this.maps[this.state.opposite_map].get(node).depth;
-        }
-        let children = await this.node_children(node);
-        for (const child of children) {
-            if (await this.completes(child.title)) {
-                return this.state.depth + this.maps[this.state.opposite_map].get(child.title).depth;
+
+        let leaves = this.leaves[this.state.current_tree];
+        this.leaves[this.state.current_tree] = [];
+
+        // check if any current leaves connect to opposite tree
+        for (const leaf of leaves) {
+            if (this.maps[this.state.opposite_tree].has(leaf)) {
+                return this.state.depth + this.maps[this.state.opposite_tree].get(leaf).depth;
             }
-            this.set_map(child.title);
-            // this.maps[this.state.current_map].set(child.title, this.state.depth);
         }
-    }
-
-    set_map(node) {
-        if (!this.maps[this.state.current_map].has(node)) {
-            this.maps[this.state.current_map].set(node, ({depth: this.state.depth}))
+        // otherwise grow current tree and switch sides
+        for (const leaf of leaves) {
+            this.leaves[this.state.current_tree].push(await this.node_children(leaf));
         }
-    }
-
-    switch_side() {
-        this.state.switched++; // number of times sides have switched
-        this.state.current_map = this.state.switched%2; // for current map
-        this.state.opposite_map = (this.state.switched-1)%2; // for opposite map
-        this.state.depth = Math.floor(this.state.switched/2); // descendant depth
+        this.switch_side();
     }
 
     async path_len() {
