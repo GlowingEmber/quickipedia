@@ -43,7 +43,9 @@ class Shortest_Path {
     async node_children(id) {
         let node = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=links&format=json&formatversion=2&gpllimit=500&pageids=" + id);
         let json = await node.json();
-        console.log(json.query.pages.map(page => page.pageid));
+        console.dir(json.query.pages.map(page => page.title), 
+        {'maxArrayLength': 5}
+        );
         return json.query.pages.map(page => page.pageid);
     }
     
@@ -54,8 +56,7 @@ class Shortest_Path {
 
     async traverse(node) {
         await this.setup();
-        while (this.state.switched < 1) {
-            // console.log(this.leaves[this.state.current_tree])
+        while (this.state.switched < 3) {
             let leaves = this.leaves[this.state.current_tree];
             this.leaves[this.state.current_tree] = [];
 
@@ -70,7 +71,6 @@ class Shortest_Path {
                 this.leaves[this.state.current_tree] = 
                 this.leaves[this.state.current_tree].concat(await this.node_children(leaf));
             }
-            // console.log(this.leaves[this.state.current_tree])
             this.switch_side();
         }
     }
