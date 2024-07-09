@@ -1,0 +1,1 @@
+export const GRAPH_SCALE = 1;

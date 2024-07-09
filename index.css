@@ -1,0 +1,23 @@
+body {
+    font-family: sans-serif;
+    padding: 0px;
+    margin: 0px;
+    background-color: #1B1B1F;
+  }
+  
+  .edge line {
+      stroke: #fff;
+      stroke-width: 3;
+    }
+    
+  .node circle {
+      cursor:grab;
+      stroke-width: 4;
+      stroke: #1B1B1F;
+  }
+    
+  text {
+      font-family: sans-serif;
+      font-size: 10px;
+  }
+
