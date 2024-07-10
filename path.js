@@ -52,8 +52,7 @@ class Subgraph {
                 if (this.maps[this.state.opposite_tree].has(leaf.id)) {
                     return {
                         "distance": this.state.depth + this.maps[this.state.opposite_tree].get(leaf.id).depth,
-                        "path": this.maps[this.state.current_tree].get(leaf.id).ancestry
-                                // .concat(this.maps[this.state.opposite_tree].get(leaf).ancestry)
+                        "path": await this.combined_paths(leaf.ancestry, this.maps[this.state.opposite_tree].get(leaf.id).ancestry)
                     }
                 }
             }
@@ -82,6 +81,12 @@ class Subgraph {
         }
     }
 
+    async combined_paths(path1, path2) {
+        let ids = path1.concat(path2);
+        // return await this.node_title(ids[1]);
+        return await Promise.all(ids.map(async id => await this.node_title(id)));
+    }
+
     switch_side() {
         this.state.switches++;
         this.state.current_tree = this.state.switches%2;
@@ -95,12 +100,17 @@ class Subgraph {
         return json.query.pages[0].pageid;
     }
 
+    async node_title(id) {
+        let node = await fetch("https://en.wikipedia.org/w/api.php?action=query&prop=links&pllimit=max&format=json&formatversion=2&pageids=" + id);
+        let json = await node.json();
+        return json.query.pages[0].title;
+    }
+
     async node_children(id) {
         let node = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=links&format=json&formatversion=2&gpllimit=500&pageids=" + id);
         let json = await node.json();
         return json.query.pages.map(page => page.pageid);
     }
-
 }
 
 async function run() {
