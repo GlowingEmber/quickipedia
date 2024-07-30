@@ -24,8 +24,8 @@ for (const p in parameters) {
     flags[p] = parameters[p].reduce((count, param) => count || process.argv.includes(param), false);
 }
 
-const flag_count = Object.values(flags).reduce((count, flag) => count + flag, 0);
-if (flag_count > 1) {
+const flagCount = Object.values(flags).reduce((count, flag) => count + flag, 0);
+if (flagCount > 1) {
     console.error('Error: Expected at most one flag.');
     process.exit(1);
 }
