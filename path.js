@@ -27,8 +27,10 @@ class Subgraph {
     }
 
     async setup() {
-        let firstID = await this.nodeID(this.first);
-        let lastID = await this.nodeID(this.last);
+        // let firstID = await this.nodeID(this.first);
+        let firstID = await this.wikiRequest("id", this.first);
+        // let lastID = await this.nodeID(this.last);
+        let lastID = await this.wikiRequest("id", this.last);
         let firstPage = new Page(firstID, 0, [firstID]);
         let lastPage = new Page(lastID, 0, [lastID]);
         this.maps[0].set(firstID, firstPage);
@@ -50,19 +52,9 @@ class Subgraph {
             for (const leaf of leaves) {
                 this.mapAdd(leaf.id, leaf.ancestry);
                 if (this.maps[this.state.oppositeTree].has(leaf.id)) {
-                
-                    console.log(
-                        {
-                            "tree1or2": this.state.currentTree + 1,
-                            "viaLeaf": `${await this.nodeTitle(leaf.id)} ${leaf.id}`,
-                            "currentTreeAncestry": leaf.ancestry,
-                            "oppositeTreeAncestry": this.maps[this.state.oppositeTree].get(leaf.id).ancestry
-                        }
-                    );
-    
                     return {
                         "distance": this.state.depth + this.maps[this.state.oppositeTree].get(leaf.id).depth,
-                        "path": await this.combinedPaths(leaf.ancestry.slice(0,-1)
+                        "path": await this.combinePaths(leaf.ancestry.slice(0,-1)
                             , this.maps[this.state.oppositeTree].get(leaf.id).ancestry)
                     }
                 }
@@ -72,10 +64,11 @@ class Subgraph {
             for (const leaf of leaves) {
                 // console.log(leaf.id, leaf.ancestry);
                 this.pagesSearched++;
-                if (this.pagesSearched%10===1 && this.pagesSearched>10) {
+                if (this.pagesSearched%config.SEARCH_DISPLAY_INTERVAL===1 && this.pagesSearched>config.SEARCH_DISPLAY_INTERVAL) {
                     console.log(`>${this.pagesSearched-1} pages searched...`);
                 }
-                this.treeLeaves[this.state.currentTree] = (await this.adjacentNodes(leaf.id))
+                const direction = Boolean(this.state.currentTree) ? "parents" : "children";
+                this.treeLeaves[this.state.currentTree] = (await this.wikiRequest(direction, leaf.id))
                                                             .filter(child => child !== undefined)
                                                             .map((childID) => 
                                                             new Page(childID, this.state.depth + 1, leaf.ancestry.concat(childID)));
@@ -96,9 +89,9 @@ class Subgraph {
         }
     }
 
-    async combinedPaths(current, opposite) {
+    async combinePaths(current, opposite) {
         const ids =  (this.state.oppositeTree ? current.concat(opposite.reverse()) : opposite.concat(current.reverse()));
-        return await Promise.all(ids.map(async id => await this.nodeTitle(id)));
+        return await Promise.all(ids.map(async id => await this.wikiRequest("id", id)));
     }
 
     switchSide() {
@@ -112,27 +105,36 @@ class Subgraph {
     /// WIKIMEDIA API
     ///////////////////////
 
-    async nodeID(title) {
-        const node = await fetch("https://en.wikipedia.org/w/api.php?action=query&prop=links&pllimit=max&format=json&formatversion=2&titles=" + title);
-        const json = await node.json();
-        return json.query.pages[0].pageid;
+    async wikiJSON(base, params, page) {
+        let node = await fetch(base + params + page);
+        let json = await node.json();
+        return json;
     }
 
-    async nodeTitle(id) {
-        const node = await fetch("https://en.wikipedia.org/w/api.php?action=query&prop=links&pllimit=max&format=json&formatversion=2&pageids=" + id);
-        const json = await node.json();
-        return json.query.pages[0].title;
-    }
-
-    async adjacentNodes(id) {
+    async wikiRequest(requestType, page) {
         const base = "https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&";
-        // use parent nodes if current tree is tree2; use children nodes if current tree is tree1
-        const params = Boolean(this.state.currentTree)
-            ? "generator=backlinks&blnamespace=0&gbllimit=500&gblpageid="
-            : "generator=links&plnamespace=0&gpllimit=500&pageids=";
-        const nodes = await fetch(base + params + id);
-        const json = await nodes.json();
-        return json.query.pages.map(page => page.pageid);
+        let params;
+        let json;
+
+        switch(requestType) {
+
+            case "children":
+                params="generator=links&plnamespace=0&gpllimit=500&pageids=";
+                json = await this.wikiJSON(base, params, page);
+                return json.query.pages.map(page => page.pageid);
+            case "parents":
+                params="generator=backlinks&blnamespace=0&gbllimit=500&gblpageid=";
+                json = await this.wikiJSON(base, params, page);
+                return json.query.pages.map(page => page.pageid);
+            case "title":
+                params="prop=links&plnamespace=0&pllimit=max&pageids=";
+                json = await this.wikiJSON(base, params, page);
+                return json.query.pages[0].title;
+            case "id":
+                params="prop=links&plnamespace=0&pllimit=max&titles=";
+                json = await this.wikiJSON(base, params, page);
+                return json.query.pages[0].pageid;
+        }
     }
 }
 
