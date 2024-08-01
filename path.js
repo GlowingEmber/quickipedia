@@ -62,7 +62,7 @@ class Subgraph {
 
             // OTHERWISE GROW CURRENT TREE AND SWITCH SIDES
             for (const leaf of leaves) {
-                // console.log(leaf.id, leaf.ancestry);
+                console.log(leaf.id, leaf.ancestry);
                 this.pagesSearched++;
                 if (this.pagesSearched%config.SEARCH_DISPLAY_INTERVAL===1 && this.pagesSearched>config.SEARCH_DISPLAY_INTERVAL) {
                     console.log(`>${this.pagesSearched-1} pages searched...`);
@@ -91,7 +91,7 @@ class Subgraph {
 
     async combinePaths(current, opposite) {
         const ids =  (this.state.oppositeTree ? current.concat(opposite.reverse()) : opposite.concat(current.reverse()));
-        return await Promise.all(ids.map(async id => await this.wikiRequest("id", id)));
+        return await Promise.all(ids.map(async id => await this.wikiRequest("title", id)));
     }
 
     switchSide() {
