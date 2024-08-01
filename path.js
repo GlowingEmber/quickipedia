@@ -115,15 +115,19 @@ class Subgraph {
         switch(requestType) {
             case "children":
                 params="generator=links&plnamespace=0&gpllimit=500&pageids=";
+                break;
             case "parents":
                 params="generator=backlinks&blnamespace=0&gbllimit=500&gblpageid=";
+                break;
             case "title":
                 params="prop=links&plnamespace=0&pllimit=max&pageids=";
+                break;
             case "id":
                 params="prop=links&plnamespace=0&pllimit=max&titles=";
+                break;
         }
         let json = await this.wikiJSON(base, params, page);
-        let pages = json.query.pages;
+        let pages = await json.query.pages;
 
         if (requestType === "title") {return pages[0].title;}
         else if (requestType === "id") {return pages[0].pageid;}
