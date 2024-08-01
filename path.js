@@ -138,7 +138,10 @@ class Subgraph {
     }
 }
 
-
-const shortest = new Subgraph("Donald Trump", "Joe Biden");
+/*
+const shortest = new Subgraph("Donald Trump", "Barack Obama");
 const path = await shortest.path();
 console.log(path);
+*/
+
+export default Subgraph;
