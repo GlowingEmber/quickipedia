@@ -27,20 +27,17 @@ class Subgraph {
     }
 
     async setup() {
-        // let firstID = await this.nodeID(this.first);
         let firstID = await this.wikiRequest("id", this.first);
-        // let lastID = await this.nodeID(this.last);
         let lastID = await this.wikiRequest("id", this.last);
         let firstPage = new Page(firstID, 0, [firstID]);
         let lastPage = new Page(lastID, 0, [lastID]);
         this.maps[0].set(firstID, firstPage);
         this.maps[1].set(lastID, lastPage);
-        // each tree starts out with one leaf each (the root of each)
         this.treeLeaves = [[firstPage], [lastPage]];
     }
 
     ///////////////////////
-    /// MAIN
+    /// ALTERNATING BFS
     ///////////////////////
 
     async path() {
@@ -62,7 +59,7 @@ class Subgraph {
 
             // OTHERWISE GROW CURRENT TREE AND SWITCH SIDES
             for (const leaf of leaves) {
-                console.log(leaf.id, leaf.ancestry);
+                // console.log(leaf.id, leaf.ancestry); // for testing
                 this.pagesSearched++;
                 if (this.pagesSearched%config.SEARCH_DISPLAY_INTERVAL===1 && this.pagesSearched>config.SEARCH_DISPLAY_INTERVAL) {
                     console.log(`>${this.pagesSearched-1} pages searched...`);
@@ -102,7 +99,7 @@ class Subgraph {
     }
 
     ///////////////////////
-    /// WIKIMEDIA API
+    /// API CALLS
     ///////////////////////
 
     async wikiJSON(base, params, page) {
@@ -114,34 +111,24 @@ class Subgraph {
     async wikiRequest(requestType, page) {
         const base = "https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&";
         let params;
-        let json;
 
         switch(requestType) {
-
             case "children":
                 params="generator=links&plnamespace=0&gpllimit=500&pageids=";
-                json = await this.wikiJSON(base, params, page);
-                return json.query.pages.map(page => page.pageid);
             case "parents":
                 params="generator=backlinks&blnamespace=0&gbllimit=500&gblpageid=";
-                json = await this.wikiJSON(base, params, page);
-                return json.query.pages.map(page => page.pageid);
             case "title":
                 params="prop=links&plnamespace=0&pllimit=max&pageids=";
-                json = await this.wikiJSON(base, params, page);
-                return json.query.pages[0].title;
             case "id":
                 params="prop=links&plnamespace=0&pllimit=max&titles=";
-                json = await this.wikiJSON(base, params, page);
-                return json.query.pages[0].pageid;
         }
+        let json = await this.wikiJSON(base, params, page);
+        let pages = json.query.pages;
+
+        if (requestType === "title") {return pages[0].title;}
+        else if (requestType === "id") {return pages[0].pageid;}
+        else {return pages.map(page => page.pageid);};
     }
 }
-
-/*
-const shortest = new Subgraph("Donald Trump", "Barack Obama");
-const path = await shortest.path();
-console.log(path);
-*/
 
 export default Subgraph;

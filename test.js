@@ -42,27 +42,25 @@ class Request {
     async get(page) {
         const base = "https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&";
         let params;
-        let json;
 
         switch(true) {
-
             case flags.children:
                 params="generator=links&plnamespace=0&gpllimit=500&pageids=";
-                json = await wikiJSON(base, params, page);
-                return json.query.pages.map(page => page.pageid);
             case flags.backlinks:
                 params="generator=backlinks&blnamespace=0&gbllimit=500&gblpageid=";
-                json = await wikiJSON(base, params, page);
-                return json.query.pages.map(page => page.pageid);
             case flags.title:
                 params="prop=links&plnamespace=0&pllimit=max&pageids=";
-                json = await wikiJSON(base, params, page);
-                return json.query.pages[0].title;
             case flags.id:
                 params="prop=links&plnamespace=0&pllimit=max&titles=";
-                json = await wikiJSON(base, params, page);
-                return json.query.pages[0].pageid;
         }
+
+        let json = await wikiJSON(base, params, page);
+        let pages = await json.query.pages;
+
+        if (flags.title) {return pages[0].title;}
+        else if (flags.id) {return pages[0].pageid;}
+        else {return pages.map(page => page.pageid);};
+
     }
 }
 
