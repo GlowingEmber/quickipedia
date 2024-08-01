@@ -1,7 +1,7 @@
 import * as process from 'node:process';
 
 if (process.argv.length <= 3) {
-    console.error('Error: Expected 2 arguments.');
+    console.error(`Error: Expected 2 arguments.`);
     process.exit(1);
 }
 
@@ -26,10 +26,10 @@ for (const p in parameters) {
 
 const flagCount = Object.values(flags).reduce((count, flag) => count + flag, 0);
 if (flagCount > 1) {
-    console.error('Error: Expected at most one flag.');
+    console.error(`Error: Expected at most one flag.`);
     process.exit(1);
 }
-// console.log(flags);
+console.log(flags);
 
 async function wikiJSON(base, params, page) {
     let node = await fetch(base + params + page);
@@ -67,4 +67,4 @@ class Request {
 }
 
 let test = await (new Request()).get(process.argv[2]);
-console.log(test);
+console.log(JSON.stringify(test));

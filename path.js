@@ -16,14 +16,14 @@ class Subgraph {
 
     constructor(first, last) {
         this.first = first; this.last = last;
-        this.map1 = new Map(); this.map2 = new Map();
-        this.maps = [this.map1, this.map2];
+        this.maps = [new Map(), new Map()];
         this.state = {
             "switches": 0,
             "currentTree": 0,
             "depth": 0,
             "oppositeTree": 1
         }
+        this.pagesSearched = 0;
     }
 
     async setup() {
@@ -31,8 +31,8 @@ class Subgraph {
         let lastID = await this.nodeID(this.last);
         let firstPage = new Page(firstID, 0, [firstID]);
         let lastPage = new Page(lastID, 0, [lastID]);
-        this.map1.set(firstID, firstPage);
-        this.map2.set(lastID, lastPage);
+        this.maps[0].set(firstID, firstPage);
+        this.maps[1].set(lastID, lastPage);
         // each tree starts out with one leaf each (the root of each)
         this.treeLeaves = [[firstPage], [lastPage]];
     }
@@ -48,16 +48,18 @@ class Subgraph {
 
             // CHECK IF ANY CURRENT LEAVES CONNECT TO OPPOSITE TREE
             for (const leaf of leaves) {
-                // console.log(leaf.id, leaf.ancestry);
                 this.mapAdd(leaf.id, leaf.ancestry);
                 if (this.maps[this.state.oppositeTree].has(leaf.id)) {
+                
                     console.log(
                         {
                             "tree1or2": this.state.currentTree + 1,
                             "viaLeaf": `${await this.nodeTitle(leaf.id)} ${leaf.id}`,
-                            "withAncestry": leaf.ancestry
+                            "currentTreeAncestry": leaf.ancestry,
+                            "oppositeTreeAncestry": this.maps[this.state.oppositeTree].get(leaf.id).ancestry
                         }
                     );
+    
                     return {
                         "distance": this.state.depth + this.maps[this.state.oppositeTree].get(leaf.id).depth,
                         "path": await this.combinedPaths(leaf.ancestry.slice(0,-1)
@@ -68,7 +70,11 @@ class Subgraph {
 
             // OTHERWISE GROW CURRENT TREE AND SWITCH SIDES
             for (const leaf of leaves) {
-                console.log(leaf.id, leaf.ancestry);
+                // console.log(leaf.id, leaf.ancestry);
+                this.pagesSearched++;
+                if (this.pagesSearched%10===1 && this.pagesSearched>10) {
+                    console.log(`>${this.pagesSearched-1} pages searched...`);
+                }
                 this.treeLeaves[this.state.currentTree] = (await this.adjacentNodes(leaf.id))
                                                             .filter(child => child !== undefined)
                                                             .map((childID) => 
@@ -76,6 +82,7 @@ class Subgraph {
             }
             this.switchSide();
         }
+        console.error("Error: Could not find a path within a distance of 6.");
         return {"distance": -1, "path": []};
     }
 
@@ -89,8 +96,8 @@ class Subgraph {
         }
     }
 
-    async combinedPaths(path1, path2) {
-        const ids = path1.concat(path2);
+    async combinedPaths(current, opposite) {
+        const ids =  (this.state.oppositeTree ? current.concat(opposite.reverse()) : opposite.concat(current.reverse()));
         return await Promise.all(ids.map(async id => await this.nodeTitle(id)));
     }
 
@@ -102,7 +109,7 @@ class Subgraph {
     }
 
     ///////////////////////
-    /// HELPERS
+    /// WIKIMEDIA API
     ///////////////////////
 
     async nodeID(title) {
@@ -117,18 +124,6 @@ class Subgraph {
         return json.query.pages[0].title;
     }
 
-    async nodeChildren(id) {
-        let nodes = await fetch("https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&generator=links&plnamespace=0&gpllimit=500&pageids=" + id);
-        let json = await nodes.json();
-        return json.query.pages.map(page => page.pageid);
-    }
-
-    async nodeParents(id) {
-        let nodes = await fetch("https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&generator=backlinks&blnamespace=0&gbllimit=500&gblpageid=" + id);
-        let json = await nodes.json();
-        return json.query.pages.map(page => page.pageid);
-    }
-
     async adjacentNodes(id) {
         const base = "https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&";
         // use parent nodes if current tree is tree2; use children nodes if current tree is tree1
@@ -141,9 +136,7 @@ class Subgraph {
     }
 }
 
-async function run() {
-    const shortest = new Subgraph("Donald Trump", "Sonia Sotomayor");
-    const path = await shortest.path();
-    console.log(path);
-}
-run();
+
+const shortest = new Subgraph("Donald Trump", "Joe Biden");
+const path = await shortest.path();
+console.log(path);
