@@ -65,10 +65,11 @@ class Subgraph {
                     console.log(`>${this.pagesSearched-1} pages searched...`);
                 }
                 const direction = Boolean(this.state.currentTree) ? "parents" : "children";
-                this.treeLeaves[this.state.currentTree] = (await this.wikiRequest(direction, leaf.id))
-                                                            .filter(child => child !== undefined)
-                                                            .map((childID) => 
-                                                            new Page(childID, this.state.depth + 1, leaf.ancestry.concat(childID)));
+                this.treeLeaves[this.state.currentTree] = 
+                (await this.wikiRequest(direction, leaf.id))
+                    .filter(child => child !== undefined)
+                    .map((childID) => 
+                    new Page(childID, this.state.depth + 1, leaf.ancestry.concat(childID)));
             }
             this.switchSide();
         }
@@ -87,26 +88,22 @@ class Subgraph {
     }
 
     async combinePaths(current, opposite) {
-        const ids =  (this.state.oppositeTree ? current.concat(opposite.reverse()) : opposite.concat(current.reverse()));
+        const ids =  (this.state.oppositeTree
+            ? current.concat(opposite.reverse())
+            : opposite.concat(current.reverse()));
         return await Promise.all(ids.map(async id => await this.wikiRequest("title", id)));
     }
 
     switchSide() {
         this.state.switches++;
         this.state.currentTree = this.state.switches%2;
-        this.state.oppositeTree = Number(!Boolean(this.state.currentTree));
+        this.state.oppositeTree = Number(!(this.state.currentTree));
         this.state.depth = Math.floor(this.state.switches/2);
     }
 
     ///////////////////////
     /// API CALLS
     ///////////////////////
-
-    async wikiJSON(base, params, page) {
-        let node = await fetch(base + params + page);
-        let json = await node.json();
-        return json;
-    }
 
     async wikiRequest(requestType, page) {
         const base = "https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&";
@@ -125,8 +122,12 @@ class Subgraph {
             case "id":
                 params="prop=links&plnamespace=0&pllimit=max&titles=";
                 break;
+            default:
+                console.error("Error: Incorrect request type.");
+                break;
         }
-        let json = await this.wikiJSON(base, params, page);
+        let response = await fetch(base + params + page)
+        let json = await response.json();
         let pages = await json.query.pages;
 
         if (requestType === "title") {return pages[0].title;}
