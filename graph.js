@@ -15,115 +15,121 @@ const height = svg.attr("height");
 
 const tree = {
   nodes: [
+    // dummy values
     {
-      id: 1,
+      id: "Natalia Hopkins",
+      selected: true
     },
     {
-      id: 2,
+      id: "Aaron Hopkins",
+      selected: true
     },
     {
-      id: 3,
+      id: "Iris Shi",
+      selected: true
     },
     {
-      id: 4,
+      id: "State of Israel",
     },
     {
-      id: 5,
+      id: "United States of America",
     },
     {
-      id: 6,
+      id: "Robert F. Kennedy, Jr",
     },
     {
-      id: 7,
+      id: "Kethan Raman",
     },
     {
-      id: 8,
+      id: "Darwin Smith",
     },
     {
-      id: 9,
+      id: "Islamic Emirate of Afghanistan",
     },
     {
-      id: 10,
+      id: "2023 Invasion of Santa Monica",
     },
     {
-      id: 11,
+      id: "BingBongBamboo",
     },
     {
-      id: 12,
+      id: "Ethan Hopkins",
     },
     {
-      id: 13,
+      id: "PewDiePie",
     },
     {
-      id: 14,
+      id: "MrBeast",
     },
     {
-      id: 15,
+      id: "Yom Kippur War",
     },
     {
-      id: 16,
+      id: "Brat",
     },
   ],
   edges: [
     {
-      source: 1,
-      target: 2,
+      source: "Natalia Hopkins",
+      target: "Aaron Hopkins",
+      selected: true, 
     },
     {
-      source: 1,
-      target: 3,
+      source: "Natalia Hopkins",
+      target: "Iris Shi",
+      selected: true, 
     },
     {
-      source: 1,
-      target: 4,
+      source: "Natalia Hopkins",
+      target: "State of Israel",
     },
     {
-      source: 1,
-      target: 5,
+      source: "Natalia Hopkins",
+      target: "United States of America",
     },
     {
-      source: 1,
-      target: 6,
+      source: "Natalia Hopkins",
+      target: "Robert F. Kennedy, Jr",
     },
     {
-      source: 1,
-      target: 7,
+      source: "Natalia Hopkins",
+      target: "Kethan Raman",
     },
     {
-      source: 1,
-      target: 8,
+      source: "Natalia Hopkins",
+      target: "Darwin Smith",
     },
     {
-      source: 2,
-      target: 9,
+      source: "Aaron Hopkins",
+      target: "Islamic Emirate of Afghanistan",
     },
     {
-      source: 2,
-      target: 10,
+      source: "Aaron Hopkins",
+      target: "2023 Invasion of Santa Monica",
     },
     {
-      source: 2,
-      target: 11,
+      source: "Aaron Hopkins",
+      target: "BingBongBamboo",
     },
     {
-      source: 3,
-      target: 12,
+      source: "Iris Shi",
+      target: "Ethan Hopkins",
     },
     {
-      source: 3,
-      target: 13,
+      source: "Iris Shi",
+      target: "PewDiePie",
     },
     {
-      source: 4,
-      target: 14,
+      source: "Iris Shi",
+      target: "MrBeast",
     },
     {
-      source: 4,
-      target: 15,
+      source: "Iris Shi",
+      target: "Yom Kippur War",
     },
     {
-      source: 5,
-      target: 16,
+      source: "Iris Shi",
+      target: "Brat",
     },
   ],
 };
@@ -131,7 +137,7 @@ const tree = {
 const sim = d3
   .forceSimulation()
   .force("edge", d3.forceLink().id((d) => d.id))
-  .force("manybody", d3.forceManyBody().strength(-400))
+  .force("manybody", d3.forceManyBody().strength(-300))
   .force("center", d3.forceCenter(width/2, height/2));
 
 const edge = svg
@@ -141,6 +147,8 @@ const edge = svg
   .data(tree.edges)
   .enter()
   .append("line")
+  // .attr("stroke", d => d.selected ? "#3366CC" : "black")
+
 
 const node = svg
   .append("g")
@@ -149,8 +157,18 @@ const node = svg
   .data(tree.nodes)
   .enter()
   .append("circle")
-  .attr("r", 8)
-  .attr("fill", "#fff");
+  .attr("r", 6)
+  // .attr("fill", d => d.selected ? "#3366CC" : "black")
+
+const pagelink = svg
+  .append("g")
+  .attr("class", "pagelink")
+  .selectAll("text")
+  .data(tree.nodes)
+  .enter()
+  .append("text")
+  .text(d => d.id)
+
 
 node.call(d3.drag()
     .on("start", dragStart)
@@ -166,6 +184,9 @@ sim.nodes(tree.nodes).on("tick", () => {
   node
       .attr("cx", d => d.x)
       .attr("cy", d => d.y);
+  pagelink
+      .attr("x", (d) => d.x+3)
+      .attr("y", (d) => d.y-10);
 });
 
 sim.force("edge").links(tree.edges);
