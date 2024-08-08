@@ -1,18 +1,42 @@
-import * as Path from "./path.js";
+// import * as Path from "./path.js";
+import testdata from "./testdata.json" with {type: "json"};
 
-document.querySelector(".generate")
-    .addEventListener("click", () => generate());
-
+/*
 function generate() {
     console.log("generating path");
     Path.run();
 }
+*/
+
 
 const svg = d3.select("#graphSVG");
 const width = svg.attr("width");
 const height = svg.attr("height");
+
+console.log(testdata.maps);
+
+document.querySelector(".generate")
+    .addEventListener("click", () => generate());
+
 // const color = d3.scaleOrdinal(d3.schemeCategory10);
 
+const tree = {
+  nodes: [],
+  edges: []
+}
+
+Object.keys(testdata.maps).forEach((key) => {
+  let page = testdata.maps[key];
+  tree.nodes.push({id: page.id});
+  if (page.depth > 0) {
+    tree.edges.push({
+      source: page.ancestry.at(-2),
+      target: page.ancestry.at(-1)
+    })
+  }
+})
+
+/*
 const tree = {
   nodes: [
     // dummy values
@@ -134,6 +158,8 @@ const tree = {
   ],
 };
 
+*/
+
 const sim = d3
   .forceSimulation()
   .force("edge", d3.forceLink().id((d) => d.id))
@@ -157,7 +183,7 @@ const node = svg
   .data(tree.nodes)
   .enter()
   .append("circle")
-  .attr("r", 6)
+  .attr("r", 5)
   // .attr("fill", d => d.selected ? "#3366CC" : "black")
 
 const pagelink = svg

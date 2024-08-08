@@ -94,7 +94,7 @@ class Shortest_Path {
     }
 
     async node_children(id) {
-        let node = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=links&format=json&formatversion=2&gpllimit=500&pageids=" + id);
+        let node = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=links&format=json&formatversion=2&prop=info&pllimit=500&list=allcategories&pageids=" + id);
         let json = await node.json();
         return json.query.pages.map(page => page.pageid);
     }
