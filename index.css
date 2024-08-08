@@ -1,0 +1,23 @@
+body {
+    font-family: sans-serif;
+    padding: 0px;
+    margin: 0px;
+    background-color: #fff;
+  }
+.edge line {
+    stroke: black;
+    stroke-width: 1;
+  }
+
+.node circle {
+    /* fill:#3366CC; */
+    cursor:grab;
+    stroke-width: 2;
+    /* stroke: fff; */
+}
+.pagelink text {
+    font-family: sans-serif;
+    font-size: 10px;
+    fill: #3366CC;
+    text-decoration: underline;
+}
