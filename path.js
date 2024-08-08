@@ -49,11 +49,12 @@ class Subgraph {
             for (const leaf of leaves) {
                 this.mapAdd(leaf.id, leaf.ancestry);
                 if (this.maps[this.state.oppositeTree].has(leaf.id)) {
-                    return {
+                    return JSON.stringify({
                         "distance": this.state.depth + this.maps[this.state.oppositeTree].get(leaf.id).depth,
                         "path": await this.combinePaths(leaf.ancestry.slice(0,-1)
-                            , this.maps[this.state.oppositeTree].get(leaf.id).ancestry)
-                    }
+                            , this.maps[this.state.oppositeTree].get(leaf.id).ancestry),
+                        "maps": Object.fromEntries(this.maps)
+                    })
                 }
             }
 
