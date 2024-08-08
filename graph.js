@@ -24,18 +24,22 @@ const tree = {
   nodes: [],
   edges: []
 }
+console.log("map 0", testdata.maps[0],
+  "maps 1", testdata.maps[1]
+)
 
-Object.keys(testdata.maps).forEach((key) => {
-  let page = testdata.maps[key];
-  tree.nodes.push({id: page.id});
-  if (page.depth > 0) {
-    tree.edges.push({
-      source: page.ancestry.at(-2),
-      target: page.ancestry.at(-1)
-    })
-  }
+for (let x = 0; x < 2; x++) {
+  Object.keys(testdata.maps[x]).forEach((key) => {
+    let page = testdata.maps[x][key];
+    tree.nodes.push({title: page.title, id: page.id});
+    if (page.depth > 0) {
+      tree.edges.push({
+        source: page.ancestry.at(-2),
+        target: page.ancestry.at(-1)
+      })
+    }
 })
-
+}
 /*
 const tree = {
   nodes: [
@@ -193,7 +197,7 @@ const pagelink = svg
   .data(tree.nodes)
   .enter()
   .append("text")
-  .text(d => d.id)
+  .text(d => d.title)
 
 
 node.call(d3.drag()

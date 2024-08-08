@@ -1,7 +1,8 @@
 import config from "./config.js";
 
 class Page {
-    constructor(id, depth, ancestry) {
+    constructor(title, id, depth, ancestry) {
+        this.title = title;
         this.id = id;
         this.depth = depth;
         this.ancestry = ancestry;
@@ -27,12 +28,12 @@ class Subgraph {
     }
 
     async setup() {
-        let firstID = await this.wikiRequest("id", this.first);
-        let lastID = await this.wikiRequest("id", this.last);
-        let firstPage = new Page(firstID, 0, [firstID]);
-        let lastPage = new Page(lastID, 0, [lastID]);
-        this.maps[0].set(firstID, firstPage);
-        this.maps[1].set(lastID, lastPage);
+        let firstReq = (await this.wikiRequest("id", this.first));
+        let lastReq = (await this.wikiRequest("id", this.last));
+        let firstPage = new Page(firstReq.title, firstReq.id, 0, [firstReq.id]);
+        let lastPage = new Page(firstReq.title, lastReq.id, 0, [lastReq.id]);
+        this.maps[0].set(firstReq.id, firstPage);
+        this.maps[1].set(lastReq.id, lastPage);
         this.treeLeaves = [[firstPage], [lastPage]];
     }
 
@@ -47,30 +48,29 @@ class Subgraph {
 
             // CHECK IF ANY CURRENT LEAVES CONNECT TO OPPOSITE TREE
             for (const leaf of leaves) {
-                this.mapAdd(leaf.id, leaf.ancestry);
+                this.mapAdd(leaf.title, leaf.id, leaf.ancestry);
                 if (this.maps[this.state.oppositeTree].has(leaf.id)) {
                     return JSON.stringify({
                         "distance": this.state.depth + this.maps[this.state.oppositeTree].get(leaf.id).depth,
                         "path": await this.combinePaths(leaf.ancestry.slice(0,-1)
                             , this.maps[this.state.oppositeTree].get(leaf.id).ancestry),
-                        "maps": Object.fromEntries(this.maps)
+                        "maps": [Object.fromEntries(this.maps[0]), Object.fromEntries(this.maps[1])]
                     })
                 }
             }
 
             // OTHERWISE GROW CURRENT TREE AND SWITCH SIDES
             for (const leaf of leaves) {
-                // console.log(leaf.id, leaf.ancestry); // for testing
                 this.pagesSearched++;
                 if (this.pagesSearched%config.SEARCH_DISPLAY_INTERVAL===1 && this.pagesSearched>config.SEARCH_DISPLAY_INTERVAL) {
-                    console.log(`>${this.pagesSearched-1} pages searched...`);
+                    // console.log(`>${this.pagesSearched-1} pages searched...`);
                 }
                 const direction = Boolean(this.state.currentTree) ? "parents" : "children";
                 this.treeLeaves[this.state.currentTree] = 
                 (await this.wikiRequest(direction, leaf.id))
-                    .filter(child => child !== undefined)
-                    .map((childID) => 
-                    new Page(childID, this.state.depth + 1, leaf.ancestry.concat(childID)));
+                    .filter(child => child.id !== undefined)
+                    .map((child) => 
+                    new Page(child.title, child.id, this.state.depth + 1, leaf.ancestry.concat(child.id)));
             }
             this.switchSide();
         }
@@ -82,9 +82,9 @@ class Subgraph {
     /// HELPERS
     ///////////////////////
 
-    mapAdd(node, ancestry) {
+    mapAdd(title, node, ancestry) {
         if (!this.maps[this.state.currentTree].has(node)) {
-            this.maps[this.state.currentTree].set(node, new Page(node, this.state.depth, ancestry));
+            this.maps[this.state.currentTree].set(node, new Page(title, node, this.state.depth, ancestry));
         }
     }
 
@@ -92,7 +92,7 @@ class Subgraph {
         const ids =  (this.state.oppositeTree
             ? current.concat(opposite.reverse())
             : opposite.concat(current.reverse()));
-        return await Promise.all(ids.map(async id => await this.wikiRequest("title", id)));
+        return await Promise.all(ids.map(async id => (await this.wikiRequest("title", id)).title));
     }
 
     switchSide() {
@@ -130,10 +130,13 @@ class Subgraph {
         let response = await fetch(base + params + page)
         let json = await response.json();
         let pages = await json.query.pages;
-
-        if (requestType === "title") {return pages[0].title;}
-        else if (requestType === "id") {return pages[0].pageid;}
-        else {return pages.map(page => page.pageid);};
+        // console.log(pages)
+        if (requestType === "title" || requestType === "id") {return {"title": pages[0].title, "id": pages[0].pageid}}
+        else {return pages.map(page => ({"title": page.title, "id": page.pageid}));};
+        /*
+        if (requestType === "title" || requestType === "id") {return {"title": pages[0].title, "id": pages[0].pageid}}
+        else {return pages.map(page => ({"title": page.title, "id": page.pageid}) )}
+        */
     }
 }
 
