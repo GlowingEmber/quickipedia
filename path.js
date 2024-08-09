@@ -31,7 +31,7 @@ class Subgraph {
         let firstReq = (await this.wikiRequest("id", this.first));
         let lastReq = (await this.wikiRequest("id", this.last));
         let firstPage = new Page(firstReq.title, firstReq.id, 0, [firstReq.id]);
-        let lastPage = new Page(firstReq.title, lastReq.id, 0, [lastReq.id]);
+        let lastPage = new Page(lastReq.title, lastReq.id, 0, [lastReq.id]);
         this.maps[0].set(firstReq.id, firstPage);
         this.maps[1].set(lastReq.id, lastPage);
         this.treeLeaves = [[firstPage], [lastPage]];

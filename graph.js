@@ -13,8 +13,6 @@ const svg = d3.select("#graphSVG");
 const width = svg.attr("width");
 const height = svg.attr("height");
 
-console.log(testdata.maps);
-
 document.querySelector(".generate")
     .addEventListener("click", () => generate());
 
@@ -24,150 +22,36 @@ const tree = {
   nodes: [],
   edges: []
 }
-console.log("map 0", testdata.maps[0],
-  "maps 1", testdata.maps[1]
-)
+
+const added = new Set();
 
 for (let x = 0; x < 2; x++) {
   Object.keys(testdata.maps[x]).forEach((key) => {
     let page = testdata.maps[x][key];
-    tree.nodes.push({title: page.title, id: page.id});
-    if (page.depth > 0) {
-      tree.edges.push({
-        source: page.ancestry.at(-2),
-        target: page.ancestry.at(-1)
-      })
-    }
-})
-}
-/*
-const tree = {
-  nodes: [
-    // dummy values
-    {
-      id: "Natalia Hopkins",
-      selected: true
-    },
-    {
-      id: "Aaron Hopkins",
-      selected: true
-    },
-    {
-      id: "Iris Shi",
-      selected: true
-    },
-    {
-      id: "State of Israel",
-    },
-    {
-      id: "United States of America",
-    },
-    {
-      id: "Robert F. Kennedy, Jr",
-    },
-    {
-      id: "Kethan Raman",
-    },
-    {
-      id: "Darwin Smith",
-    },
-    {
-      id: "Islamic Emirate of Afghanistan",
-    },
-    {
-      id: "2023 Invasion of Santa Monica",
-    },
-    {
-      id: "BingBongBamboo",
-    },
-    {
-      id: "Ethan Hopkins",
-    },
-    {
-      id: "PewDiePie",
-    },
-    {
-      id: "MrBeast",
-    },
-    {
-      id: "Yom Kippur War",
-    },
-    {
-      id: "Brat",
-    },
-  ],
-  edges: [
-    {
-      source: "Natalia Hopkins",
-      target: "Aaron Hopkins",
-      selected: true, 
-    },
-    {
-      source: "Natalia Hopkins",
-      target: "Iris Shi",
-      selected: true, 
-    },
-    {
-      source: "Natalia Hopkins",
-      target: "State of Israel",
-    },
-    {
-      source: "Natalia Hopkins",
-      target: "United States of America",
-    },
-    {
-      source: "Natalia Hopkins",
-      target: "Robert F. Kennedy, Jr",
-    },
-    {
-      source: "Natalia Hopkins",
-      target: "Kethan Raman",
-    },
-    {
-      source: "Natalia Hopkins",
-      target: "Darwin Smith",
-    },
-    {
-      source: "Aaron Hopkins",
-      target: "Islamic Emirate of Afghanistan",
-    },
-    {
-      source: "Aaron Hopkins",
-      target: "2023 Invasion of Santa Monica",
-    },
-    {
-      source: "Aaron Hopkins",
-      target: "BingBongBamboo",
-    },
-    {
-      source: "Iris Shi",
-      target: "Ethan Hopkins",
-    },
-    {
-      source: "Iris Shi",
-      target: "PewDiePie",
-    },
-    {
-      source: "Iris Shi",
-      target: "MrBeast",
-    },
-    {
-      source: "Iris Shi",
-      target: "Yom Kippur War",
-    },
-    {
-      source: "Iris Shi",
-      target: "Brat",
-    },
-  ],
-};
+    if (!added.has(page.id)) {
+      added.add(page.id);
+      let json = {};
+      
+      if (testdata.path.includes(page.title)) {
+      json.selected = true;
+      }
+      json.title = page.title; json.id = page.id;
+      tree.nodes.push(json);
+      console.log(json)
 
-*/
+      if (page.ancestry.length > 1) {
+        tree.edges.push({
+          source: page.ancestry.at(-2),
+          target: page.ancestry.at(-1)
+        })
+      }
+    }
+})}
 
 const sim = d3
   .forceSimulation()
   .force("edge", d3.forceLink().id((d) => d.id))
-  .force("manybody", d3.forceManyBody().strength(-300))
+  .force("manybody", d3.forceManyBody().strength(-400))
   .force("center", d3.forceCenter(width/2, height/2));
 
 const edge = svg
@@ -187,8 +71,13 @@ const node = svg
   .data(tree.nodes)
   .enter()
   .append("circle")
-  .attr("r", 5)
+  .attr("r", d => d.selected ? 10 : 4)
+  // .attr("r", 5)
   // .attr("fill", d => d.selected ? "#3366CC" : "black")
+  .on('click', function(d) {
+    // window.location.href=`https://en.wikipedia.org/wiki/${d.title}`;
+    window.open(`https://en.wikipedia.org/wiki/${d.title}`, '_blank')//.focus()
+  })
 
 const pagelink = svg
   .append("g")
@@ -198,6 +87,8 @@ const pagelink = svg
   .enter()
   .append("text")
   .text(d => d.title)
+  .attr("font-size", d => d.selected ? "15px" : "10px")
+  .attr("font-weight", d => d.selected ? "bold" : "normal")
 
 
 node.call(d3.drag()
